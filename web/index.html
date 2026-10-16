@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sonic Xtreme Textures (PCX → PNG)</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Sonic Xtreme — Converted Textures</h1>
+    <p>Thumbnails below are generated from the assets/manifest.json produced by tools/convert_pcx.py</p>
+  </header>
+  <main id="gallery"></main>
+
+  <template id="tile-tpl">
+    <article class="tile">
+      <img class="thumb" alt="thumbnail" />
+      <div class="meta">
+        <div class="name"></div>
+        <div class="size"></div>
+        <a class="download" target="_blank">open</a>
+      </div>
+    </article>
+  </template>
+
+  <div id="viewer" class="viewer hidden">
+    <button id="close">✕</button>
+    <img id="viewer-img" alt="full" />
+    <div id="viewer-caption"></div>
+  </div>
+
+  <script>
+  async function loadManifest(){
+    try{
+      const r = await fetch('assets/manifest.json');
+      if(!r.ok) throw new Error('manifest not found');
+      return await r.json();
+    }catch(e){
+      console.error(e);
+      return { images: [] };
+    }
+  }
+
+  function fmtBytes(n){
+    if(n<1024) return n+' B';
+    if(n<1024*1024) return (n/1024).toFixed(1)+' KB';
+    return (n/1024/1024).toFixed(2)+' MB';
+  }
+
+  async function build(){
+    const data = await loadManifest();
+    const gallery = document.getElementById('gallery');
+    const tpl = document.getElementById('tile-tpl');
+    for(const img of data.images){
+      const node = tpl.content.cloneNode(true);
+      const article = node.querySelector('.tile');
+      const thumb = node.querySelector('.thumb');
+      thumb.src = img.png;
+      thumb.alt = img.source;
+      node.querySelector('.name').textContent = img.source;
+      node.querySelector('.size').textContent = img.width + '×' + img.height + ' · ' + fmtBytes(img.bytes);
+      const a = node.querySelector('.download');
+      a.href = img.png; a.textContent = 'open';
+      thumb.addEventListener('click', ()=> openViewer(img));
+      gallery.appendChild(node);
+    }
+  }
+
+  const viewer = document.getElementById('viewer');
+  const viewerImg = document.getElementById('viewer-img');
+  const viewerCaption = document.getElementById('viewer-caption');
+  document.getElementById('close').addEventListener('click', ()=> viewer.classList.add('hidden'));
+
+  function openViewer(img){
+    viewerImg.src = img.png;
+    viewerCaption.textContent = img.source + ' — ' + img.width + '×' + img.height;
+    viewer.classList.remove('hidden');
+  }
+
+  build();
+  </script>
+</body>
+</html>
